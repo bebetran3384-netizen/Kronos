@@ -357,16 +357,15 @@ def load_data():
             if len(df) < 2:
                 return "Unknown"
             
-            time_diffs = []
-            for i in range(1, min(10, len(df))):  # Check first 10 time differences
-                diff = df['timestamps'].iloc[i] - df['timestamps'].iloc[i-1]
-                time_diffs.append(diff)
-            
-            if not time_diffs:
+            # Use the median gap between consecutive bars: an average is pulled up
+            # by lunch breaks, overnight closes and weekends.
+            time_diffs = df['timestamps'].diff().dropna()
+            time_diffs = time_diffs[time_diffs > pd.Timedelta(0)]
+
+            if time_diffs.empty:
                 return "Unknown"
-            
-            # Calculate average time difference
-            avg_diff = sum(time_diffs, pd.Timedelta(0)) / len(time_diffs)
+
+            avg_diff = time_diffs.median()
             
             # Convert to readable format
             if avg_diff < pd.Timedelta(minutes=1):
